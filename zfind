@@ -22,6 +22,10 @@ from contextlib import closing
 import re
 import zipfile
 
+class Usage(Exception):
+  def __init__(self, msg):
+    self.msg = msg
+
 def scan_file(pattern, path):
   ''' Search a zip file's contents for matching file names '''
   if zipfile.is_zipfile(path):
@@ -39,12 +43,25 @@ def scan_zip_files(pattern, path):
       for f in (os.path.join(here, f) for f in files):
         scan_file(pattern, f)
 
-if __name__ == '__main__':
-  if len(sys.argv) < 3:
-    print >>sys.stderr, "Usage: %s pattern path..." % sys.argv[0]
-    sys.exit(1)
+def main(argv=None):
+  if (argv is None):
+    argv = sys.argv
 
-  pattern = sys.argv[1]
-  scanned, total = 0, 0
-  for path in sys.argv[2:]:
-    scan_zip_files(pattern, path)
+  try:
+    if len(argv) < 3:
+      raise Usage("Usage: %s pattern path..." % argv[0])
+
+    pattern = argv[1]
+    scanned, total = 0, 0
+    for path in argv[2:]:
+      scan_zip_files(pattern, os.path.expanduser(path))
+
+    return 0
+
+  except Usage, err:
+    print >>sys.stderr, err.msg
+    return 1
+
+if __name__ == '__main__':
+  sys.exit(main())
+
